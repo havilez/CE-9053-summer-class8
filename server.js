@@ -1,9 +1,14 @@
 var express = require("express");
-var Tab = require("./app/tab");
 var db = require("./app/config/db");
+var bodyParser = require('body-parser');
 var Thing = require("./app/models/thing");
-var bodyParser = require("body-parser");
 
+var Tab = require("./app/tab");
+
+
+
+
+//db.set('debug', true);
 db.connect()
     .then(function(){
         console.log("connected to DB");
@@ -14,8 +19,12 @@ db.connect()
 
 
 var app = express();
+
 app.locals.pretty = true;
 app.set("view engine", "jade");
+
+
+// middleware
 
 app.use(express.static(__dirname + "/public"));
 
@@ -31,104 +40,118 @@ app.use(function(req, res, next){
 });
 
 
-app.get("/", function(req, res){
-   res.render("index", {
-       title: "Home",
-       activePath: "/"
-   });
-});
-app.get("/people", function(req, res){
-   res.render("people", {
-       title: "People",
-       activePath: "/people"
-   });
-});
-app.get("/things", function(req, res){
-    Thing.find({}).then(function(things){
-       res.render("things", {
-           title: "Things",
-           activePath: "/things",
-           things: things
-       });
+// api endpoints
+
+app.get("/", function (req, res) {
+    res.render("index", {
+        title: "Home",
+        activePath: "/"
     });
 });
 
-app.post("/things/new", function(req, res){
-   var thing = new Thing(req.body);
-    var promise;
-    if (req.body.Save) {
-        promise = thing.save()
-
-        promise.then(function () {
-            res.redirect("/things");
-        }, function (err) {
-            if (err) {
-                console.log("Error = ", err, "occured when saving ", thing);
-                serverError = err;
-                res.render("error");
-
-            }
-
-        });
-    }
-
-    if (req.body.Delete) {
-        thing.find({name: req.body.name}, function (err, dbThing) {
-            if (err ) {
-                console.log("Error = ",err, " occurred when deleting ");
-                serverError = err;
-                res.render("error");
-            }
-            
-            dbThing.remove(err, function (err) {
-                if (err ) {
-                    console.log("Error = ",err, " occurred when deleting ",dbThing);
-                    serverError = err;
-                    res.render("error");
-                }
-
-                console.log("Successfully deleted =", dbThing);
-            })
-
-        })
-
-    }
 
 
+app.get("/", function (req, res) {
+    res.render("index", {
+        title: "Home",
+        activePath: "/"
+    });
 });
 
-app.post("/things/:id", function(req, res){
-    Thing.update(
-        {_id: req.params.id}, 
-        {$set:{ name: req.body.name}}
-    ).then(function(){
-        res.redirect("/things"); 
-    }), function (err) {
-        if (err ) {
-            console.log( "Error = ", err);
+app.get("/people", function (req, res) {
+    res.render("people", {
+        title: "People",
+        activePath: "/people"
+    });
+});
+
+app.get("/things", function (req, res) {
+    Thing.find({}).then(function (things) {
+        res.render("things", {
+            title: "Things",
+            activePath: "/things",
+            things: things
+        });
+    });
+});
+
+app.post("/things/new", function (req, res) {
+    var thing = new Thing(req.body);
+    var promise= thing.save();
+
+    promise.then(function () {
+        res.redirect("/things");
+    }, function (err) {
+        if (err) {
+            console.log("Error = ", err, "occured when saving ", thing);
             serverError = err;
             res.render("error");
-            }
-    };
+
+        }
+
+    });
+
+
+    res.redirect("/things");
+
 });
 
-app.get("/things/new", function(req, res){
+app.post("/things/:id", function (req, res) {
+
+    if (req.body.Delete) {
+        Thing.findOneAndRemove({name: req.body.name}, function (err) {
+            if (err) {
+                console.log("Error = ", err, " occurred when deleting ", req.body.name);
+                serverError = err;
+                res.render("error");
+            }
+
+            console.log("Successfully deleted =", req.body.name);
+            res.redirect("/things");
+        })
+
+
+    };
+
+    if (req.body.Save) {
+        Thing.update(
+            {_id: req.params.id},
+            {$set: {name: req.body.name, active: req.body.active}}
+        ).then(function () {
+                res.redirect("/things");
+            }), function (err) {
+            if (err) {
+                console.log("Error = ", err);
+                serverError = err;
+                res.render("error");
+            }
+        };
+    }
+});
+
+app.get("/things/new", function (req, res) {
     res.render("thing_new", {
         activePath: "/things",
-        title: "Insert a New Thing"
+        title: "Insert a New Thing",
+        active: false
     });
-    
+
 });
-app.get("/things/:id", function(req, res){
+
+app.get("/things/:id", function (req, res) {
     Thing.findById(req.params.id)
-        .then(function(thing){
+        .then(function (thing) {
             res.render("thing", {
-               activePath: "/things",
-               thing: thing,
-               title: "Thing " + thing.name
-            });  
+                activePath: "/things",
+                thing: thing,
+                title: "Thing " + thing.name,
+                active: thing.active
+            });
         });
 });
+
+
+
 
 var port = process.env.PORT ||  8080
 app.listen(port , function () {

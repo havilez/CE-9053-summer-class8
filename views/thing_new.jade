@@ -5,6 +5,9 @@ block content
         div.form-group
             label(for="thing_name") Name
             input.form-control#thing_name(name="name")
+            label(for="thing_active") Active
+            input.form-control#thing_active(type='checkbox', name='active',   checked=active)
+
         div
             button.btn.btn-primary(type="submit")
                 | Save
