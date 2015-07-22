@@ -2,7 +2,7 @@ extends layout
 block content
     a(href="/things") Back to list
     if invalid
-     .error Unable to save thing.
+      div.alert.alert-danger Unable to save thing in database.
 
     form.form(method="POST")
         div.form-group
