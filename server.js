@@ -77,22 +77,15 @@ app.get("/things", function (req, res) {
 
 app.post("/things/new", function (req, res) {
     var thing = new Thing(req.body);
-    var promise= thing.save();
-
-    promise.then(function () {
+    thing.save().then(function () {
         res.redirect("/things");
-    }, function (err) {
-        if (err) {
-            console.log("Error = ", err, "occured when saving ", thing);
-            serverError = err;
-            res.render("error");
 
-        }
 
+    },function (err) {
+        console.log("Error = ", err, "occured when saving ", req.body.name);
+        res.render("thing_new", {invalid:true});
     });
 
-
-    res.redirect("/things");
 
 });
 
@@ -103,7 +96,7 @@ app.post("/things/:id", function (req, res) {
             if (err) {
                 console.log("Error = ", err, " occurred when deleting ", req.body.name);
                 serverError = err;
-                res.render("error");
+                res.render("thing", {invalid:true});
             }
 
             console.log("Successfully deleted =", req.body.name);
@@ -123,7 +116,7 @@ app.post("/things/:id", function (req, res) {
             if (err) {
                 console.log("Error = ", err);
                 serverError = err;
-                res.render("error");
+                res.render("thing", {invalid:true});
             }
         };
     }

@@ -1,6 +1,8 @@
 extends layout
 block content
     a(href="/things") Back to list
+    if invalid
+        .error Unable to complete operation
     h1 
         =thing.name
     form.form(method="POST")
